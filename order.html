@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Moyoyo's Ice Cream - Chills Menu</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #fffafc;
+      padding: 20px;
+      margin: 0;
+    }
+    .container {
+      max-width: 500px;
+      margin: 0 auto;
+      padding: 30px;
+      background-color: #fff0f5;
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    h1 {
+      text-align: center;
+      color: #ff4d6d;
+    }
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 15px;
+      margin: 10px 0;
+      background-color: #ff6b81;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.3s ease;
+    }
+    .btn:hover {
+      background-color: #e6556d;
+    }
+    .form-group {
+      margin-bottom: 12px;
+      text-align: left;
+    }
+    .form-group label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+    .menu-items, .payment-methods, .total-display, .cash-section, .gcash-section, .paymaya-section {
+      display: none;
+      margin-top: 15px;
+      animation: fadeIn 0.3s ease-in;
+    }
+    .menu-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 10px 0;
+      background: #ffe4ea;
+      padding: 10px;
+      border-radius: 10px;
+    }
+    .menu-item input {
+      width: 60px;
+    }
+    .total-display {
+      text-align: center;
+      font-size: 18px;
+      font-weight: bold;
+      color: #d6336c;
+      margin-top: 15px;
+    }
+    .thank-you {
+      display: none;
+      text-align: center;
+      font-size: 24px;
+      color: #ff6b81;
+      margin-top: 20px;
+      animation: fadeIn 1s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>Moyoyo's Ice Cream</h1>
+  <button type="button" class="btn" onclick="showMenu()">Chills Menu</button>
+  <form id="orderForm" action="placeanorder.php" method="POST" onsubmit="return handleSubmit(event)">
+    <input type="hidden" name="payment_method" id="paymentMethod">
+    <input type="hidden" name="total_amount" id="totalAmount">
+    <input type="hidden" name="order_items" id="orderItems">
+    <div class="menu-items" id="menuItems">
+      <div class="menu-item">
+        <label>Strawberry - ₱50</label>
+        <input type="number" min="0" value="0" data-price="50" class="orderInput">
+      </div>
+      <div class="menu-item">
+        <label>Vanilla - ₱45</label>
+        <input type="number" min="0" value="0" data-price="45" class="orderInput">
+      </div>
+      <div class="menu-item">
+        <label>Chocolate - ₱55</label>
+        <input type="number" min="0" value="0" data-price="55" class="orderInput">
+      </div>
+      <div class="menu-item">
+        <label>Mango - ₱60</label>
+        <input type="number" min="0" value="0" data-price="60" class="orderInput">
+      </div>
+      <button type="button" class="btn" onclick="calculateTotal()">Check Order</button>
+    </div>
+    <div class="total-display" id="totalDisplay"></div>
+    <div class="payment-methods" id="paymentMethods">
+      <div class="form-group">
+        <label>Select Payment Method:</label>
+        <select id="paymentSelect" required onchange="setPaymentMethod()">
+          <option value="">-- Choose --</option>
+          <option value="Cash">Cash</option>
+          <option value="GCash">GCash</option>
+          <option value="PayMaya">PayMaya</option>
+        </select>
+      </div>
+      <div class="cash-section" id="cashSection">
+        <div class="form-group">
+          <label>Total Amount (Readonly)</label>
+          <input type="text" id="cashTotal" readonly>
+        </div>
+        <div class="form-group">
+          <label>Cash Given</label>
+          <input type="number" id="cashGiven" oninput="calculateChange()">
+        </div>
+        <div class="form-group">
+          <label>Cash Change</label>
+          <input type="text" id="cashChange" readonly>
+        </div>
+      </div>
+      <div class="gcash-section" id="gcashSection">
+        <div class="form-group">
+          <label>GCash Number</label>
+          <input type="text" id="gcashNumber" placeholder="Enter your GCash number">
+        </div>
+      </div>
+      <div class="paymaya-section" id="paymayaSection">
+        <div class="form-group">
+          <label>PayMaya Number</label>
+          <input type="text" id="paymayaNumber" placeholder="Enter your PayMaya number">
+        </div>
+      </div>
+      <button type="submit" class="btn">Place Order</button>
+      <button type="button" class="btn" onclick="cancelOrder()">Cancel Order</button>
+    </div>
+  </form>
+  <div class="thank-you" id="thankYou">Enjoy and feel the chill!</div>
+</div>
+
+<script>
+  let isOrderReady = false;
+
+  function showMenu() {
+    document.getElementById('menuItems').style.display = 'block';
+    document.getElementById('paymentMethods').style.display = 'none';
+    document.getElementById('totalDisplay').style.display = 'none';
+    document.getElementById('thankYou').style.display = 'none';
+  }
+
+  function calculateTotal() {
+    const inputs = document.querySelectorAll('.orderInput');
+    let total = 0;
+    const orderItems = [];
+    inputs.forEach(input => {
+      const qty = parseInt(input.value) || 0;
+      const flavor = input.previousElementSibling.textContent.split(' - ')[0];
+      const price = parseFloat(input.getAttribute('data-price'));
+      if (qty > 0) {
+        orderItems.push({ flavor: flavor, quantity: qty, price: price });
+      }
+      total += qty * price;
+    });
+
+    if (total > 0) {
+      document.getElementById('totalDisplay').innerText = `Total Amount: ₱${total.toFixed(2)}`;
+      document.getElementById('totalDisplay').style.display = 'block';
+      document.getElementById('paymentMethods').style.display = 'block';
+      document.getElementById('totalAmount').value = total;
+      document.getElementById('cashTotal').value = total.toFixed(2);
+      document.getElementById('orderItems').value = JSON.stringify(orderItems);
+
+      isOrderReady = true;
+    } else {
+      alert("Please select at least one item.");
+    }
+  }
+
+  function setPaymentMethod() {
+    const selected = document.getElementById('paymentSelect').value;
+    document.getElementById('paymentMethod').value = selected;
+
+    document.getElementById('cashSection').style.display = 'none';
+    document.getElementById('gcashSection').style.display = 'none';
+    document.getElementById('paymayaSection').style.display = 'none';
+
+    if (selected === 'Cash') {
+      document.getElementById('cashSection').style.display = 'block';
+    } else if (selected === 'GCash') {
+      document.getElementById('gcashSection').style.display = 'block';
+    } else if (selected === 'PayMaya') {
+      document.getElementById('paymayaSection').style.display = 'block';
+    }
+  }
+
+  function calculateChange() {
+    const total = parseFloat(document.getElementById('cashTotal').value);
+    const cash = parseFloat(document.getElementById('cashGiven').value);
+    if (!isNaN(total) && !isNaN(cash) && cash >= total) {
+      document.getElementById('cashChange').value = (cash - total).toFixed(2);
+    } else {
+      document.getElementById('cashChange').value = '';
+    }
+  }
+
+  function cancelOrder() {
+    document.getElementById('orderForm').reset();
+    document.getElementById('menuItems').style.display = 'none';
+    document.getElementById('paymentMethods').style.display = 'none';
+    document.getElementById('totalDisplay').style.display = 'none';
+    document.getElementById('thankYou').style.display = 'none';
+    isOrderReady = false;  
+  }
+
+  function handleSubmit(event) {
+    event.preventDefault();  
+    
+    if (isOrderReady) {
+      document.getElementById('paymentMethods').style.display = 'block';
+    } else {
+      alert("Please finalize your order before proceeding to payment.");
+    }
+  }
+</script>
+</body>
+</html>
